@@ -6,6 +6,7 @@ Uses ChatOpenAI with a weather tool in a manual ReAct loop.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Dict, Sequence
 
 from langchain_core.messages import BaseMessage
@@ -21,7 +22,7 @@ proxy_async_client = httpx.AsyncClient(proxy="http://127.0.0.1:10808")
 llm = ChatOpenAI(
     model='openai/gpt-oss-120b',
     temperature=0.8,
-    api_key='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',
+    api_key=os.getenv("OPENAI_API_KEY"),
     base_url="https://integrate.api.nvidia.com/v1",
     # extra_body={'chat_template_kwargs': {'enable_thinking': False}},
     http_async_client=proxy_async_client

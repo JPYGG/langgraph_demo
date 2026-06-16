@@ -7,6 +7,7 @@ License: MIT
 Requires-Python: >=3.10
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: langchain-openai>=1.3.2
 Requires-Dist: langgraph>=1.0.0
 Requires-Dist: python-dotenv>=1.0.1
 Provides-Extra: dev
@@ -41,7 +42,7 @@ pip install -e . "langgraph-cli[inmem]"
 2. (Optional) Customize the code and project as needed. Create a `.env` file if you need to use secrets.
 
 ```bash
-cp .env.example .env
+cp .env .env
 ```
 
 If you want to enable LangSmith tracing, add your LangSmith API key to the `.env` file.
