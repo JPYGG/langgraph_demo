@@ -9,13 +9,16 @@ import logging
 import os
 from typing import Any, Dict, Sequence
 
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph
 from langgraph.graph.message import add_messages
 from typing_extensions import Annotated, TypedDict
 import httpx
+
+from agent.tools.tool_demo4 import calculate4
+
 proxy_async_client = httpx.AsyncClient(proxy="http://127.0.0.1:10808")
 
 
@@ -40,7 +43,8 @@ class State(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
 
 
-tools = [get_weather]
+# tools = [get_weather]
+tools = [calculate4]
 llm_with_tools = llm.bind_tools(tools)
 
 
@@ -62,7 +66,9 @@ def call_model(state: State) -> Dict[str, Any]:
 
     try:
         # 尝试调用模型
-        response = llm_with_tools.invoke(state["messages"])
+        system_message = SystemMessage(content="你是一个智能助手，尽可能的调用工具回答用户的问题")
+        messages = [system_message] + list(state["messages"])
+        response = llm_with_tools.invoke(messages)
         logger.info("--- LLM 调用成功 ---")
         logger.info(f"LLM 响应内容: {response.content}")
         return {"messages": [response]}
@@ -79,13 +85,26 @@ def call_model(state: State) -> Dict[str, Any]:
         raise e
 
 
+tools_by_name = {tool.name: tool for tool in tools}
+
 def call_tool(state: State) -> Dict[str, Any]:
     """Execute tool calls from the last AI message."""
     last_message = state["messages"][-1]
     tool_messages = []
     for tool_call in last_message.tool_calls:
-        tool_result = get_weather.invoke(tool_call)
-        tool_messages.append(tool_result)
+        tool_name = tool_call["name"]
+        if tool_name in tools_by_name:
+            tool_result = tools_by_name[tool_name].invoke(tool_call)
+            tool_messages.append(tool_result)
+        else:
+            from langchain_core.messages import ToolMessage
+            tool_messages.append(
+                ToolMessage(
+                    content=f"Error: Tool '{tool_name}' not found.",
+                    name=tool_name,
+                    tool_call_id=tool_call.get("id")
+                )
+            )
     return {"messages": tool_messages}
 
 
