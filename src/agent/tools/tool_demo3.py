@@ -31,10 +31,10 @@ def calculate3(
     return result
 
 
-print(calculate3.name)
-print(calculate3.description)
-print(calculate3.args)
-print(calculate3.args_schema.model_json_schema())
-print(calculate3.return_direct)
-
-print(calculate3.invoke({'x': 40, 'y': 2, 'operation': 'multiply'}))
+# print(calculate3.name)
+# print(calculate3.description)
+# print(calculate3.args)
+# print(calculate3.args_schema.model_json_schema())
+# print(calculate3.return_direct)
+#
+# print(calculate3.invoke({'x': 40, 'y': 2, 'operation': 'multiply'}))

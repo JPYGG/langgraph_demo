@@ -40,10 +40,10 @@ def calculate4(
     return result
 
 
-print(calculate4.name)
-print(calculate4.description)
-print(calculate4.args)
-print(calculate4.args_schema.model_json_schema())
-print(calculate4.return_direct)
-
-print(calculate4.invoke({'a': 40, 'b': 2, 'operation': 'multiply'}))
+# print(calculate4.name)
+# print(calculate4.description)
+# print(calculate4.args)
+# print(calculate4.args_schema.model_json_schema())
+# print(calculate4.return_direct)
+#
+# print(calculate4.invoke({'a': 40, 'b': 2, 'operation': 'multiply'}))

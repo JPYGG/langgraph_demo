@@ -4,11 +4,9 @@ Uses ChatOpenAI with a weather tool in a manual ReAct loop.
 """
 
 from __future__ import annotations
-
 import logging
 import os
 from typing import Any, Dict, Sequence
-
 from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
@@ -17,19 +15,11 @@ from langgraph.graph.message import add_messages
 from typing_extensions import Annotated, TypedDict
 import httpx
 
+from agent.my_llm import llm
+from agent.my_state import CustomState
 from agent.tools.tool_demo4 import calculate4
-
-proxy_async_client = httpx.AsyncClient(proxy="http://127.0.0.1:10808")
-
-
-llm = ChatOpenAI(
-    model='openai/gpt-oss-120b',
-    temperature=0.8,
-    api_key=os.getenv("OPENAI_API_KEY"),
-    base_url="https://integrate.api.nvidia.com/v1",
-    # extra_body={'chat_template_kwargs': {'enable_thinking': False}},
-    http_async_client=proxy_async_client
-)
+from agent.tools.tool_demo6 import runnable_tool
+from agent.tools.tool_demo7 import MySearchTool
 
 
 @tool
@@ -44,7 +34,8 @@ class State(TypedDict):
 
 
 # tools = [get_weather]
-tools = [calculate4]
+search_tool = MySearchTool()
+tools = [calculate4, runnable_tool, search_tool]
 llm_with_tools = llm.bind_tools(tools)
 
 
@@ -58,7 +49,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-def call_model(state: State) -> Dict[str, Any]:
+def call_model(state: CustomState) -> Dict[str, Any]:
     """Call the LLM with the current conversation messages."""
     logger.info("--- 开始调用 call_model 节点 ---")
     logger.info(f"当前 State 中的消息流长度: {len(state['messages'])}")
@@ -66,7 +57,8 @@ def call_model(state: State) -> Dict[str, Any]:
 
     try:
         # 尝试调用模型
-        system_message = SystemMessage(content="你是一个智能助手，尽可能的调用工具回答用户的问题")
+        # system_message = SystemMessage(content="你是一个智能助手，尽可能的调用工具回答用户的问题")
+        system_message = SystemMessage(content="你是一个智能助手，请准确、直接地回答用户的问题。如果需要使用工具，请在获取到足够信息后立即总结并回答，不要反复进行不必要的搜索。")
         messages = [system_message] + list(state["messages"])
         response = llm_with_tools.invoke(messages)
         logger.info("--- LLM 调用成功 ---")
@@ -87,7 +79,7 @@ def call_model(state: State) -> Dict[str, Any]:
 
 tools_by_name = {tool.name: tool for tool in tools}
 
-def call_tool(state: State) -> Dict[str, Any]:
+def call_tool(state: CustomState) -> Dict[str, Any]:
     """Execute tool calls from the last AI message."""
     last_message = state["messages"][-1]
     tool_messages = []
@@ -108,7 +100,7 @@ def call_tool(state: State) -> Dict[str, Any]:
     return {"messages": tool_messages}
 
 
-def should_continue(state: State) -> str:
+def should_continue(state: CustomState) -> str:
     """Determine whether to continue the tool loop or end."""
     last_message = state["messages"][-1]
     if hasattr(last_message, "tool_calls") and last_message.tool_calls:
@@ -118,7 +110,7 @@ def should_continue(state: State) -> str:
 
 # Define the graph
 graph = (
-    StateGraph(State)
+    StateGraph(CustomState)
     .add_node(call_model)
     .add_node(call_tool)
     .add_edge("__start__", "call_model")
