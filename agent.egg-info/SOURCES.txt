@@ -8,3 +8,8 @@ agent.egg-info/requires.txt
 agent.egg-info/top_level.txt
 src/agent/__init__.py
 src/agent/graph.py
+src/agent/mcp_agent.py
+src/agent/mcp_agent2.py
+src/agent/my_agent2.py
+src/agent/my_llm.py
+src/agent/my_state.py
